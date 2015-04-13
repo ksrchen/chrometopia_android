@@ -20,6 +20,8 @@ import com.google.android.gms.maps.Projection;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.LatLngBounds;
+import com.google.android.gms.maps.model.Polygon;
 import com.google.android.gms.maps.model.PolygonOptions;
 
 import android.location.Location;
@@ -27,7 +29,6 @@ import android.widget.Button;
 import android.widget.FrameLayout;
 
 import java.util.ArrayList;
-import java.util.List;
 
 /**
  * A simple {@link Fragment} subclass.
@@ -45,14 +46,14 @@ public class fragment_map_search extends Fragment {
     private GoogleMap mMap;
 
     // TODO: Rename and change types of parameters
-    private int  mSectionNumber;
+    private int mSectionNumber;
     private String mParam2;
-    Boolean Is_MAP_Moveable = true;
+    Boolean mInDrawMode = true;
     Projection projection;
     public double latitude;
     public double longitude;
-    private ArrayList<LatLng> val = new ArrayList<LatLng>();
-
+    private ArrayList<LatLng> mPoints = new ArrayList<LatLng>();
+    private Polygon mPolygon;
 
     private OnFragmentInteractionListener mListener;
 
@@ -67,7 +68,7 @@ public class fragment_map_search extends Fragment {
         fragment_map_search fragment = new fragment_map_search();
         Bundle args = new Bundle();
         args.putInt(ARG_SECTION_NUMBER, sectionNumber);
-       // args.putString(ARG_PARAM2, param2);
+        // args.putString(ARG_PARAM2, param2);
         fragment.setArguments(args);
 
         return fragment;
@@ -94,19 +95,30 @@ public class fragment_map_search extends Fragment {
 
         FrameLayout fram_map = (FrameLayout) v.findViewById(R.id.fram_map);
         Button btn_draw_State = (Button) v.findViewById(R.id.btn_draw_State);
-        Is_MAP_Moveable = false; // to detect map is movable
+        mInDrawMode = false; // to detect map is movable
 
         btn_draw_State.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                // TODO Auto-generated method stub
-                if (Is_MAP_Moveable != true) {
-                    Is_MAP_Moveable = true;
-                    mMap.clear();
-                } else {
-                    Is_MAP_Moveable = false;
+                mInDrawMode = !mInDrawMode;
+                mPoints.clear();
+                if (mPolygon!=null){
+                    mPolygon.remove();
+                    mPolygon = null;
                 }
-                val.clear();
+            }
+        });
+
+        Button clearButton = (Button) v.findViewById(R.id.btn_clear);
+        clearButton.setOnClickListener( new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                mPoints.clear();
+                if (mPolygon!=null){
+                    mPolygon.remove();
+                    mPolygon = null;
+                }
+                mInDrawMode = false;
             }
         });
 
@@ -114,67 +126,69 @@ public class fragment_map_search extends Fragment {
             @Override
             public boolean onTouch(View v, MotionEvent event) {
 
+                if (!mInDrawMode) {
+                    return false;
+                }
 
+                float x = event.getX();
+                float y = event.getY();
 
-            float x = event.getX();
-            float y = event.getY();
+                int x_co = Math.round(x);
+                int y_co = Math.round(y);
 
-            int x_co = Math.round(x);
-            int y_co = Math.round(y);
+                projection = mMap.getProjection();
+                Point x_y_points = new Point(x_co, y_co);
 
-            projection = mMap.getProjection();
-            Point x_y_points = new Point(x_co, y_co);
+                LatLng latLng = mMap.getProjection().fromScreenLocation(x_y_points);
+                latitude = latLng.latitude;
 
-            LatLng latLng = mMap.getProjection().fromScreenLocation(x_y_points);
-            latitude = latLng.latitude;
+                longitude = latLng.longitude;
 
-            longitude = latLng.longitude;
+                int eventaction = event.getAction();
+                switch (eventaction) {
+                    case MotionEvent.ACTION_DOWN:
+                        // finger touches the screen
+                        mPoints.add(new LatLng(latitude, longitude));
+                        break;
+                    case MotionEvent.ACTION_MOVE:
+                        // finger moves on the screen
+                        mPoints.add(new LatLng(latitude, longitude));
+                        Draw_Map();
+                        break;
+                    case MotionEvent.ACTION_UP:
+                        // finger leaves the screen
+                        Draw_Map();
+                        Zoom2Fit();
+                        mInDrawMode = false;
+                        break;
+                }
 
-            int eventaction = event.getAction();
-            switch (eventaction) {
-                case MotionEvent.ACTION_DOWN:
-                    // finger touches the screen
-                    val.add(new LatLng(latitude, longitude));
+                return true;
 
-                case MotionEvent.ACTION_MOVE:
-                    // finger moves on the screen
-                    val.add(new LatLng(latitude, longitude));
-
-                case MotionEvent.ACTION_UP:
-                    // finger leaves the screen
-                    Draw_Map();
-                    break;
             }
-
-            return Is_MAP_Moveable;
-
-
-        }
         });
 
 
-
         SupportMapFragment mapFragment = (SupportMapFragment) this.getChildFragmentManager().findFragmentById(R.id.map);
-           mMap = mapFragment.getMap();
-       mMap.setMyLocationEnabled(true);
+        mMap = mapFragment.getMap();
+        mMap.setMyLocationEnabled(true);
 
         LocationManager locationManager = (LocationManager) getActivity().getSystemService(Context.LOCATION_SERVICE);
 
         Criteria criteria = new Criteria();
 
         Location location = locationManager.getLastKnownLocation(locationManager.getBestProvider(criteria, false));
-        if (location != null)
-        {
+        if (location != null) {
             mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(
                     new LatLng(location.getLatitude(), location.getLongitude()), 13));
 
-            CameraPosition cameraPosition = new CameraPosition.Builder()
-                    .target(new LatLng(location.getLatitude(), location.getLongitude()))      // Sets the center of the map to location user
-                    .zoom(17)                   // Sets the zoom
-                    .bearing(90)                // Sets the orientation of the camera to east
-                    .tilt(40)                   // Sets the tilt of the camera to 30 degrees
-                    .build();                   // Creates a CameraPosition from the builder
-            mMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
+//            CameraPosition cameraPosition = new CameraPosition.Builder()
+//                    .target(new LatLng(location.getLatitude(), location.getLongitude()))      // Sets the center of the map to location user
+//                    .zoom(12)                   // Sets the zoom
+//                    .bearing(0)                // Sets the orientation of the camera to east
+//                    .tilt(0)                   // Sets the tilt of the camera to 30 degrees
+//                    .build();                   // Creates a CameraPosition from the builder
+//            mMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
 
         }
 
@@ -219,14 +233,24 @@ public class fragment_map_search extends Fragment {
     }
 
     public void Draw_Map() {
-        mMap.clear();
-        if (val.size()> 0) {
+        if (mPolygon != null){
+            mPolygon.remove();
+            mPolygon = null;
+        }
+        if (mPoints.size() > 0) {
             PolygonOptions rectOptions = new PolygonOptions();
-            rectOptions.addAll(val);
-            rectOptions.strokeColor(Color.BLUE);
-            rectOptions.strokeWidth(7);
-            rectOptions.fillColor(Color.argb(90, 255, 255, 0));
-            mMap.addPolygon(rectOptions);
+            rectOptions.addAll(mPoints);
+            rectOptions.strokeColor(Color.MAGENTA);
+            rectOptions.strokeWidth(5);
+            rectOptions.fillColor(Color.argb(50, 255, 255, 0));
+            mPolygon = mMap.addPolygon(rectOptions);
+        }
+    }
+    private  void Zoom2Fit(){
+        if (mPolygon != null){
+            LatLngBounds.Builder b = new LatLngBounds.Builder();
+            for(LatLng p : mPolygon.getPoints()) b.include(p);
+            mMap.animateCamera(CameraUpdateFactory.newLatLngBounds(b.build(), 25));
         }
     }
 
