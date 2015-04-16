@@ -115,7 +115,7 @@ public class fragment_map_search extends Fragment {
         if (getArguments() != null) {
             mSectionNumber = getArguments().getInt(ARG_SECTION_NUMBER);
         }
-        
+
     }
 
     @Override
