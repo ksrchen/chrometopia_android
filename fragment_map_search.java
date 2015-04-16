@@ -7,7 +7,9 @@ import android.graphics.Point;
 import android.location.Criteria;
 import android.location.LocationManager;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
@@ -18,17 +20,44 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.Projection;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptor;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
+import com.google.android.gms.maps.model.Marker;
+import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.Polygon;
 import com.google.android.gms.maps.model.PolygonOptions;
+import com.google.android.gms.maps.model.VisibleRegion;
 
 import android.location.Location;
 import android.widget.Button;
 import android.widget.FrameLayout;
 
+import org.apache.http.NameValuePair;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.message.BasicNameValuePair;
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.io.BufferedInputStream;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.DataOutputStream;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.UnsupportedEncodingException;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.net.URLConnection;
+import java.net.URLEncoder;
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * A simple {@link Fragment} subclass.
@@ -54,6 +83,8 @@ public class fragment_map_search extends Fragment {
     public double longitude;
     private ArrayList<LatLng> mPoints = new ArrayList<LatLng>();
     private Polygon mPolygon;
+
+    private ArrayList<Marker> mMarkers = new ArrayList<Marker>();
 
     private OnFragmentInteractionListener mListener;
 
@@ -84,6 +115,7 @@ public class fragment_map_search extends Fragment {
         if (getArguments() != null) {
             mSectionNumber = getArguments().getInt(ARG_SECTION_NUMBER);
         }
+        
     }
 
     @Override
@@ -119,6 +151,7 @@ public class fragment_map_search extends Fragment {
                     mPolygon = null;
                 }
                 mInDrawMode = false;
+                new DataLoader().execute("");
             }
         });
 
@@ -160,6 +193,7 @@ public class fragment_map_search extends Fragment {
                         Draw_Map();
                         Zoom2Fit();
                         mInDrawMode = false;
+                        new DataLoader().execute("");
                         break;
                 }
 
@@ -192,6 +226,12 @@ public class fragment_map_search extends Fragment {
 
         }
 
+        mMap.setOnCameraChangeListener(new GoogleMap.OnCameraChangeListener() {
+            @Override
+            public void onCameraChange(CameraPosition cameraPosition) {
+                new DataLoader().execute("");
+            }
+        });
         return v;
     }
 
@@ -207,6 +247,8 @@ public class fragment_map_search extends Fragment {
         super.onAttach(activity);
         ((MainActivity) activity).onSectionAttached(
                 getArguments().getInt(ARG_SECTION_NUMBER));
+        //DataLoader loader = new DataLoader();
+        //loader.execute("http://yahoo.com");
 
 
     }
@@ -254,4 +296,133 @@ public class fragment_map_search extends Fragment {
         }
     }
 
+    private class DataLoader extends AsyncTask<String, Integer, String>{
+        private String mWellknownPolygon;
+        private String mFilters ="";
+
+        @Override
+        protected void onPreExecute() {
+
+            for (Marker m : mMarkers){
+                m.remove();
+            }
+            mMarkers.clear();
+
+            List<LatLng> points = new ArrayList<LatLng>();
+            if (mPolygon != null){
+
+                points = mPolygon.getPoints();
+            }else {
+                VisibleRegion region = mMap.getProjection().getVisibleRegion();
+                points.add(region.nearLeft);
+                points.add(region.nearRight);
+                points.add(region.farRight);
+                points.add(region.farLeft);
+            }
+            StringBuilder sb = new StringBuilder();
+            sb.append("POLYGON((");
+            for(LatLng p: points){
+                sb.append(p.longitude + " " + p.latitude +", ");
+            }
+            LatLng p = points.get(0);
+            sb.append(p.longitude + " " + p.latitude);
+
+            sb.append("))");
+            mWellknownPolygon = sb.toString();
+            Log.i("mWellknownPolygon", mWellknownPolygon);
+
+        }
+
+        @Override
+        protected String doInBackground(String... params) {
+            try {
+
+                Log.i("Polygon=", mWellknownPolygon);
+                URL url = new URL ("http://kmlservice.azurewebsites.net/api/resincome");
+                HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+                connection.setRequestMethod("PUT");
+                connection.setRequestProperty("Content-Type", "application/json");
+                connection.setDoInput(true);
+                connection.setDoOutput(true);
+
+                connection.connect();
+
+                JSONObject jsonParam = new JSONObject();
+                jsonParam.put("Polygon", mWellknownPolygon);
+                jsonParam.put("Filters", mFilters);
+
+                OutputStreamWriter writer = new OutputStreamWriter(connection.getOutputStream());
+              //  writer.write(URLEncoder.encode(jsonParam.toString(), "UTF-8"));
+                writer.write(jsonParam.toString());
+                writer.flush();
+                writer.close();
+
+
+                int status = connection.getResponseCode();
+                String s = connection.getResponseMessage();
+
+                BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+                String line;
+
+                StringBuilder sb = new StringBuilder();
+
+                while ((line = bufferedReader.readLine()) != null)
+                {
+                    sb.append(line);
+                }
+
+                return sb.toString();
+            }catch (Exception exp) {
+                Log.e("", exp.getMessage());
+                return exp.getMessage();
+            }
+
+        }
+
+        @Override
+        protected void onPostExecute(String result) {
+            //super.onPostExecute(result);
+            Log.i("onPostExecute", result);
+
+
+            try {
+                JSONArray json = new JSONArray(result);
+                for (int i=0; i<json.length(); i++){
+                    JSONObject item = json.getJSONObject(i);
+                    double lat = item.getDouble("Latitude");
+                    double lon = item.getDouble("longitude");
+
+                    MarkerOptions maker = new MarkerOptions()
+                            .position(new LatLng(lat, lon))
+                            .icon(BitmapDescriptorFactory.fromResource(R.drawable.pin));
+                    mMarkers.add(mMap.addMarker(maker));
+                }
+                Log.i("properties=", String.format("%d", mMarkers.size()));
+
+            }catch (Exception exp){
+                Log.e("", exp.getLocalizedMessage());
+            }
+
+        }
+
+        private String getQuery(List<NameValuePair> params) throws UnsupportedEncodingException
+        {
+            StringBuilder result = new StringBuilder();
+            boolean first = true;
+
+            for (NameValuePair pair : params)
+            {
+                if (first)
+                    first = false;
+                else
+                    result.append("&");
+
+                result.append(URLEncoder.encode(pair.getName(), "UTF-8"));
+                result.append("=");
+                result.append(URLEncoder.encode(pair.getValue(), "UTF-8"));
+            }
+
+            return result.toString();
+        }
+    };
 }
