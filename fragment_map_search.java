@@ -2,6 +2,7 @@ package com.kchen.chrometopia;
 
 import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.Point;
 import android.location.Criteria;
@@ -85,6 +86,7 @@ public class fragment_map_search extends Fragment {
     private Polygon mPolygon;
 
     private ArrayList<Marker> mMarkers = new ArrayList<Marker>();
+
 
     private OnFragmentInteractionListener mListener;
 
@@ -206,7 +208,23 @@ public class fragment_map_search extends Fragment {
         SupportMapFragment mapFragment = (SupportMapFragment) this.getChildFragmentManager().findFragmentById(R.id.map);
         mMap = mapFragment.getMap();
         mMap.setMyLocationEnabled(true);
+        mMap.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
+            @Override
+            public boolean onMarkerClick(Marker marker) {
+                marker.showInfoWindow();
+                return true;
+            }
+        });
 
+        mMap.setOnInfoWindowClickListener(new GoogleMap.OnInfoWindowClickListener() {
+            @Override
+            public void onInfoWindowClick(Marker marker) {
+                Intent i = new Intent(getActivity(), PropertyDetailActivity.class);
+                i.putExtra(fragment_property_detail.ARG_MLS_NUMBER, marker.getId());
+                startActivity(i);
+
+            }
+        });
         LocationManager locationManager = (LocationManager) getActivity().getSystemService(Context.LOCATION_SERVICE);
 
         Criteria criteria = new Criteria();
@@ -391,9 +409,23 @@ public class fragment_map_search extends Fragment {
                     JSONObject item = json.getJSONObject(i);
                     double lat = item.getDouble("Latitude");
                     double lon = item.getDouble("longitude");
+                    String streetNumber = item.getString("StreetNumber");
+                    String streetName = item.getString("StreetName");
+                    String city = item.getString("City");
+                    String state = item.getString("State");
+                    String postalCode = item.getString("PostalCode");
+                    String address = String.format("%s %s %s, %s %s",
+                            streetNumber,
+                            streetName,
+                            city,
+                            state,
+                            postalCode
+
+                    );
 
                     MarkerOptions maker = new MarkerOptions()
                             .position(new LatLng(lat, lon))
+                            .title(address)
                             .icon(BitmapDescriptorFactory.fromResource(R.drawable.pin));
                     mMarkers.add(mMap.addMarker(maker));
                 }
@@ -405,24 +437,5 @@ public class fragment_map_search extends Fragment {
 
         }
 
-        private String getQuery(List<NameValuePair> params) throws UnsupportedEncodingException
-        {
-            StringBuilder result = new StringBuilder();
-            boolean first = true;
-
-            for (NameValuePair pair : params)
-            {
-                if (first)
-                    first = false;
-                else
-                    result.append("&");
-
-                result.append(URLEncoder.encode(pair.getName(), "UTF-8"));
-                result.append("=");
-                result.append(URLEncoder.encode(pair.getValue(), "UTF-8"));
-            }
-
-            return result.toString();
-        }
     };
 }
