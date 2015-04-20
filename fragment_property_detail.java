@@ -11,6 +11,7 @@ import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.TextView;
 
 
 import com.google.android.gms.plus.PlusOneButton;
@@ -59,6 +60,7 @@ public class fragment_property_detail extends Fragment {
         super.onCreate(savedInstanceState);
         if (getArguments() != null) {
             mMLSNumber = getArguments().getString(ARG_MLS_NUMBER);
+
         }
 
     }
@@ -70,7 +72,8 @@ public class fragment_property_detail extends Fragment {
         View view = inflater.inflate(R.layout.fragment_fragment_property_detail, container, false);
 
        // getActivity().getActionBar().setTitle("Property Details");
-
+        TextView text = (TextView) view.findViewById(R.id.MLSNumber);
+        text.setText(mMLSNumber);
 
         return view;
     }

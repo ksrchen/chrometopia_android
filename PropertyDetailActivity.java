@@ -1,5 +1,6 @@
 package com.kchen.chrometopia;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 
@@ -9,7 +10,8 @@ import android.support.v4.app.Fragment;
 public class PropertyDetailActivity extends SingleFragmentActivity {
     @Override
     protected Fragment CreateFragment() {
-        return fragment_property_detail.newInstance("123");
+        Intent i = getIntent();
+        return fragment_property_detail.newInstance(i.getStringExtra(fragment_property_detail.ARG_MLS_NUMBER));
     }
 
     @Override

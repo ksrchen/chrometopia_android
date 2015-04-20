@@ -58,6 +58,7 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.net.URLEncoder;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 /**
@@ -85,7 +86,7 @@ public class fragment_map_search extends Fragment {
     private ArrayList<LatLng> mPoints = new ArrayList<LatLng>();
     private Polygon mPolygon;
 
-    private ArrayList<Marker> mMarkers = new ArrayList<Marker>();
+    private HashMap<Marker, String> mMarkers = new HashMap< Marker, String>();
 
 
     private OnFragmentInteractionListener mListener;
@@ -220,7 +221,8 @@ public class fragment_map_search extends Fragment {
             @Override
             public void onInfoWindowClick(Marker marker) {
                 Intent i = new Intent(getActivity(), PropertyDetailActivity.class);
-                i.putExtra(fragment_property_detail.ARG_MLS_NUMBER, marker.getId());
+                String mlsNumber = mMarkers.get(marker);
+                i.putExtra(fragment_property_detail.ARG_MLS_NUMBER, mlsNumber);
                 startActivity(i);
 
             }
@@ -321,7 +323,7 @@ public class fragment_map_search extends Fragment {
         @Override
         protected void onPreExecute() {
 
-            for (Marker m : mMarkers){
+            for (Marker m : mMarkers.keySet()){
                 m.remove();
             }
             mMarkers.clear();
@@ -422,12 +424,14 @@ public class fragment_map_search extends Fragment {
                             postalCode
 
                     );
+                    String mlsNumber = item.getString("MLnumber");
 
                     MarkerOptions maker = new MarkerOptions()
                             .position(new LatLng(lat, lon))
                             .title(address)
                             .icon(BitmapDescriptorFactory.fromResource(R.drawable.pin));
-                    mMarkers.add(mMap.addMarker(maker));
+                    Marker m = mMap.addMarker(maker);
+                    mMarkers.put(m,mlsNumber );
                 }
                 Log.i("properties=", String.format("%d", mMarkers.size()));
 
