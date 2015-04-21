@@ -1,11 +1,14 @@
 package com.kchen.chrometopia;
 
 import android.app.Activity;
+import android.app.SearchManager;
+import android.content.Intent;
 import android.support.v7.app.ActionBarActivity;
 import android.support.v7.app.ActionBar;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -84,6 +87,15 @@ public class MainActivity extends ActionBarActivity
         actionBar.setTitle(mTitle);
     }
 
+    @Override
+    protected void onNewIntent(Intent intent) {
+        if (Intent.ACTION_SEARCH.equals(intent.getAction())) {
+            fragment_map_search fragment = (fragment_map_search) getSupportFragmentManager().findFragmentById(R.id.container);
+            if (fragment != null){
+                fragment.zoomToRegion(intent.getStringExtra(SearchManager.QUERY));
+            }
+        }
+    }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {

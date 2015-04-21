@@ -1,17 +1,26 @@
 package com.kchen.chrometopia;
 
 import android.app.Activity;
+import android.app.SearchManager;
+import android.app.SearchableInfo;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.Point;
+import android.location.Address;
 import android.location.Criteria;
+import android.location.Geocoder;
 import android.location.LocationManager;
 import android.net.Uri;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
+import android.support.v7.widget.SearchView;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
@@ -48,6 +57,7 @@ import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.DataOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
@@ -85,6 +95,7 @@ public class fragment_map_search extends Fragment {
     public double longitude;
     private ArrayList<LatLng> mPoints = new ArrayList<LatLng>();
     private Polygon mPolygon;
+    private MenuItem mSearchItem = null;
 
     private HashMap<Marker, String> mMarkers = new HashMap< Marker, String>();
 
@@ -118,7 +129,7 @@ public class fragment_map_search extends Fragment {
         if (getArguments() != null) {
             mSectionNumber = getArguments().getInt(ARG_SECTION_NUMBER);
         }
-
+        setHasOptionsMenu(true);
     }
 
     @Override
@@ -227,23 +238,17 @@ public class fragment_map_search extends Fragment {
 
             }
         });
-        LocationManager locationManager = (LocationManager) getActivity().getSystemService(Context.LOCATION_SERVICE);
 
-        Criteria criteria = new Criteria();
+        zoomToCurrentLocation();
 
-        Location location = locationManager.getLastKnownLocation(locationManager.getBestProvider(criteria, false));
+        return v;
+    }
+
+    private void zoomToCurrentLocation() {
+        Location location = getLastKnownLocation();
         if (location != null) {
             mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(
                     new LatLng(location.getLatitude(), location.getLongitude()), 13));
-
-//            CameraPosition cameraPosition = new CameraPosition.Builder()
-//                    .target(new LatLng(location.getLatitude(), location.getLongitude()))      // Sets the center of the map to location user
-//                    .zoom(12)                   // Sets the zoom
-//                    .bearing(0)                // Sets the orientation of the camera to east
-//                    .tilt(0)                   // Sets the tilt of the camera to 30 degrees
-//                    .build();                   // Creates a CameraPosition from the builder
-//            mMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
-
         }
 
         mMap.setOnCameraChangeListener(new GoogleMap.OnCameraChangeListener() {
@@ -252,7 +257,24 @@ public class fragment_map_search extends Fragment {
                 new DataLoader().execute("");
             }
         });
-        return v;
+    }
+    private Location getLastKnownLocation() {
+        LocationManager locationManager = (LocationManager) getActivity().getSystemService(Context.LOCATION_SERVICE);
+
+
+        List<String> providers = locationManager.getProviders(true);
+        Location bestLocation = null;
+        for (String provider : providers) {
+            Location l = locationManager.getLastKnownLocation(provider);
+            if (l == null) {
+                continue;
+            }
+            if (bestLocation == null || l.getAccuracy() < bestLocation.getAccuracy()) {
+                // Found best last known location: %s", l);
+                bestLocation = l;
+            }
+        }
+        return bestLocation;
     }
 
     // TODO: Rename method, update argument and hook method into UI event
@@ -273,6 +295,52 @@ public class fragment_map_search extends Fragment {
 
     }
 
+    @Override
+    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
+        inflater.inflate(R.menu.mapsearch, menu);
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB){
+            mSearchItem = menu.findItem(R.id.menu_item_search);
+            SearchView searchView = (SearchView)mSearchItem.getActionView();
+            SearchManager searchManager = (SearchManager)getActivity()
+                    .getSystemService(Context.SEARCH_SERVICE);
+            SearchableInfo searchableInfo = searchManager.getSearchableInfo(
+                    getActivity().getComponentName());
+            searchView.setSearchableInfo(searchableInfo);
+            searchView.setIconifiedByDefault(false);
+
+        }
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        if (item.getItemId() == R.id.menu_item_map_list){
+            return true;
+        }else if (item.getItemId() == R.id.menu_item_current_location){
+            SearchView searchView = (SearchView)mSearchItem.getActionView();
+            searchView.setQuery("", false);
+            searchView.clearFocus();
+            zoomToCurrentLocation();
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
+    }
+    public void zoomToRegion(String region){
+        Log.i("", region);
+
+        Geocoder geocoder = new Geocoder(getActivity());
+        List<Address> addresses = null;
+
+        try {
+            addresses = geocoder.getFromLocationName(region, 1);
+            if (addresses.size()>0){
+                mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(
+                        new LatLng(addresses.get(0).getLatitude(), addresses.get(0).getLongitude()), 13));
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
     @Override
     public void onDetach() {
         super.onDetach();
