@@ -95,7 +95,6 @@ public class fragment_map_search extends Fragment {
     public double longitude;
     private ArrayList<LatLng> mPoints = new ArrayList<LatLng>();
     private Polygon mPolygon;
-    private MenuItem mSearchItem = null;
 
     private HashMap<Marker, String> mMarkers = new HashMap< Marker, String>();
 
@@ -126,10 +125,10 @@ public class fragment_map_search extends Fragment {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        if (getArguments() != null) {
-            mSectionNumber = getArguments().getInt(ARG_SECTION_NUMBER);
-        }
-        setHasOptionsMenu(true);
+//        if (getArguments() != null) {
+//            mSectionNumber = getArguments().getInt(ARG_SECTION_NUMBER);
+//        }
+//        setHasOptionsMenu(true);
     }
 
     @Override
@@ -244,7 +243,7 @@ public class fragment_map_search extends Fragment {
         return v;
     }
 
-    private void zoomToCurrentLocation() {
+    public void zoomToCurrentLocation() {
         Location location = getLastKnownLocation();
         if (location != null) {
             mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(
@@ -295,36 +294,7 @@ public class fragment_map_search extends Fragment {
 
     }
 
-    @Override
-    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
-        inflater.inflate(R.menu.mapsearch, menu);
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB){
-            mSearchItem = menu.findItem(R.id.menu_item_search);
-            SearchView searchView = (SearchView)mSearchItem.getActionView();
-            SearchManager searchManager = (SearchManager)getActivity()
-                    .getSystemService(Context.SEARCH_SERVICE);
-            SearchableInfo searchableInfo = searchManager.getSearchableInfo(
-                    getActivity().getComponentName());
-            searchView.setSearchableInfo(searchableInfo);
-            searchView.setIconifiedByDefault(false);
-
-        }
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        if (item.getItemId() == R.id.menu_item_map_list){
-            return true;
-        }else if (item.getItemId() == R.id.menu_item_current_location){
-            SearchView searchView = (SearchView)mSearchItem.getActionView();
-            searchView.setQuery("", false);
-            searchView.clearFocus();
-            zoomToCurrentLocation();
-            return true;
-        }
-        return super.onOptionsItemSelected(item);
-    }
     public void zoomToRegion(String region){
         Log.i("", region);
 

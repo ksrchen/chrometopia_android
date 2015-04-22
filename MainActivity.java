@@ -51,7 +51,7 @@ public class MainActivity extends ActionBarActivity
         switch (position)
         {
             case 0:
-                fragment = fragment_map_search.newInstance(position+1);
+                fragment = SearchFragment.newInstance(position+1);
                 break;
             case 1:
                 fragment = HottestPropertiesFragment.newInstance(position+1);
@@ -90,7 +90,7 @@ public class MainActivity extends ActionBarActivity
     @Override
     protected void onNewIntent(Intent intent) {
         if (Intent.ACTION_SEARCH.equals(intent.getAction())) {
-            fragment_map_search fragment = (fragment_map_search) getSupportFragmentManager().findFragmentById(R.id.container);
+            SearchFragment fragment = (SearchFragment) getSupportFragmentManager().findFragmentById(R.id.container);
             if (fragment != null){
                 fragment.zoomToRegion(intent.getStringExtra(SearchManager.QUERY));
             }
