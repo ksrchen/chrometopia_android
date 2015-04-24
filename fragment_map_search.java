@@ -1,26 +1,18 @@
 package com.kchen.chrometopia;
 
 import android.app.Activity;
-import android.app.SearchManager;
-import android.app.SearchableInfo;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.Point;
 import android.location.Address;
-import android.location.Criteria;
 import android.location.Geocoder;
 import android.location.LocationManager;
 import android.net.Uri;
 import android.os.AsyncTask;
-import android.os.Build;
 import android.os.Bundle;
-import android.support.v7.widget.SearchView;
 import android.util.Log;
 import android.view.LayoutInflater;
-import android.view.Menu;
-import android.view.MenuInflater;
-import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
@@ -30,7 +22,6 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.Projection;
 import com.google.android.gms.maps.SupportMapFragment;
-import com.google.android.gms.maps.model.BitmapDescriptor;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
@@ -45,28 +36,15 @@ import android.location.Location;
 import android.widget.Button;
 import android.widget.FrameLayout;
 
-import org.apache.http.NameValuePair;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.message.BasicNameValuePair;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import java.io.BufferedInputStream;
 import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.DataOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.OutputStream;
 import java.io.OutputStreamWriter;
-import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.net.URLConnection;
-import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -96,10 +74,11 @@ public class fragment_map_search extends Fragment {
     private ArrayList<LatLng> mPoints = new ArrayList<LatLng>();
     private Polygon mPolygon;
 
+    private PropertyListFragment mPropertyListFragment;
+
     private HashMap<Marker, String> mMarkers = new HashMap< Marker, String>();
 
-
-    private OnFragmentInteractionListener mListener;
+        private OnFragmentInteractionListener mListener;
 
     /**
      * Use this factory method to create a new instance of
@@ -317,6 +296,11 @@ public class fragment_map_search extends Fragment {
         mListener = null;
     }
 
+    public void setmPropertyListFragment(PropertyListFragment mPropertyListFragment) {
+        this.mPropertyListFragment = mPropertyListFragment;
+    }
+
+
     /**
      * This interface must be implemented by activities that contain this
      * fragment to allow an interaction in this fragment to be communicated
@@ -442,7 +426,8 @@ public class fragment_map_search extends Fragment {
             //super.onPostExecute(result);
             Log.i("onPostExecute", result);
 
-
+            PropertyStore store = PropertyStore.getInstance(getActivity());
+            store.clear();
             try {
                 JSONArray json = new JSONArray(result);
                 for (int i=0; i<json.length(); i++){
@@ -470,7 +455,13 @@ public class fragment_map_search extends Fragment {
                             .icon(BitmapDescriptorFactory.fromResource(R.drawable.pin));
                     Marker m = mMap.addMarker(maker);
                     mMarkers.put(m,mlsNumber );
+
+                    Property p = new Property();
+                    p.setMLSNumber(mlsNumber);
+                    p.setAddress(address);
+                    store.addProperty(p);
                 }
+                mPropertyListFragment.updateUI();
                 Log.i("properties=", String.format("%d", mMarkers.size()));
 
             }catch (Exception exp){

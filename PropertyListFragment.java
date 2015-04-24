@@ -1,14 +1,21 @@
 package com.kchen.chrometopia;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.app.ListFragment;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
+import android.widget.ListAdapter;
 import android.widget.ListView;
+import android.widget.TextView;
 
 
 import com.kchen.chrometopia.dummy.DummyContent;
+
+import java.text.NumberFormat;
+import java.util.ArrayList;
 
 /**
  * A fragment representing a list of Items.
@@ -56,9 +63,7 @@ public class PropertyListFragment extends ListFragment {
             mParam2 = getArguments().getString(ARG_PARAM2);
         }
 
-        // TODO: Change Adapter to display your content
-        setListAdapter(new ArrayAdapter<DummyContent.DummyItem>(getActivity(),
-                android.R.layout.simple_list_item_1, android.R.id.text1, DummyContent.ITEMS));
+        setListAdapter(new PropertyListAdapter(PropertyStore.getInstance(getActivity()).getProperties()));
     }
 
 
@@ -79,16 +84,19 @@ public class PropertyListFragment extends ListFragment {
         mListener = null;
     }
 
+    public void updateUI() {
+        ArrayAdapter<Property> adapter = (ArrayAdapter<Property>) getListAdapter();
+        adapter.notifyDataSetChanged();
+    }
 
     @Override
     public void onListItemClick(ListView l, View v, int position, long id) {
         super.onListItemClick(l, v, position, id);
 
-        if (null != mListener) {
-            // Notify the active callbacks interface (the activity, if the
-            // fragment is attached to one) that an item has been selected.
-            mListener.onFragmentInteraction(DummyContent.ITEMS.get(position).id);
-        }
+        Property p = PropertyStore.getInstance(getActivity()).get(position);
+        Intent i = new Intent(getActivity(), PropertyDetailActivity.class);
+        i.putExtra(fragment_property_detail.ARG_MLS_NUMBER, p.getMLSNumber());
+        startActivity(i);
     }
 
     /**
@@ -104,6 +112,31 @@ public class PropertyListFragment extends ListFragment {
     public interface OnFragmentInteractionListener {
         // TODO: Update argument type and name
         public void onFragmentInteraction(String id);
+    }
+
+
+    private class PropertyListAdapter extends ArrayAdapter<Property> {
+        public PropertyListAdapter(ArrayList<Property> properties){
+            super(getActivity(), 0, properties);
+        }
+
+        @Override
+        public View getView(int position, View convertView, ViewGroup parent) {
+            if (convertView == null){
+                convertView = getActivity().getLayoutInflater().inflate(R.layout.propety_list_item
+                        , null);
+            }
+
+            Property c = getItem(position);
+
+            ((TextView) convertView.findViewById(R.id.property_list_item_mls_number)).setText("ML No:" + c.getMLSNumber());
+            ((TextView) convertView.findViewById(R.id.property_list_item_address)).setText(c.getAddress());
+            ((TextView) convertView.findViewById(R.id.property_list_item_roi)).setText("ROI: " + NumberFormat.getPercentInstance().format(c.getROI()));
+            ((TextView) convertView.findViewById(R.id.property_list_item_price)).setText("Price: " + NumberFormat.getCurrencyInstance().format(c.getPrice()));
+
+            return convertView;
+        }
+
     }
 
 }
