@@ -15,6 +15,7 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.FrameLayout;
 
 
 /**
@@ -32,7 +33,7 @@ public class SearchFragment extends Fragment {
     private  fragment_map_search mMapSearchFragment;
     private PropertyListFragment mPropertyListFragment;
     private Fragment mCurrentFragment;
-
+    private FrameLayout mListContainer;
     /**
      * Use this factory method to create a new instance of
      * this fragment using the provided parameters.
@@ -67,12 +68,14 @@ public class SearchFragment extends Fragment {
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
         View v =  inflater.inflate(R.layout.fragment_search, container, false);
+        mListContainer = (FrameLayout) v.findViewById(R.id.search_fragment_list_container);
 
         mPropertyListFragment = PropertyListFragment.newInstance("", "");
         mMapSearchFragment = fragment_map_search.newInstance(1);
         FragmentManager fm = getChildFragmentManager();
         fm.beginTransaction()
                 .add(R.id.search_fragment_container, mMapSearchFragment)
+                .add(R.id.search_fragment_list_container, mPropertyListFragment)
                 .commit();
         mCurrentFragment = mMapSearchFragment;
         return v;
@@ -100,24 +103,30 @@ public class SearchFragment extends Fragment {
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         if (item.getItemId() == R.id.menu_item_map_list){
-            if (mCurrentFragment == mMapSearchFragment){
-                mListItem.setTitle("Map");
-                FragmentManager fm = getChildFragmentManager();
-                fm.beginTransaction()
-                        .setCustomAnimations(R.animator.card_flip_left_in, R.animator.card_flip_left_out)
-                        .replace(R.id.search_fragment_container, mPropertyListFragment)
-                       // .addToBackStack(null)
-                        .commit();
-                mCurrentFragment = mPropertyListFragment;
-            }else{
-                mListItem.setTitle("List");
-                FragmentManager fm = getChildFragmentManager();
-                fm.beginTransaction()
-                        .setCustomAnimations(R.animator.card_flip_left_in, R.animator.card_flip_left_out)
-                        .replace(R.id.search_fragment_container, mMapSearchFragment)
-                        .commit();
-               // fm.popBackStack();
-                mCurrentFragment = mMapSearchFragment;
+//            if (mCurrentFragment == mMapSearchFragment){
+//                mListItem.setTitle("Map");
+//                FragmentManager fm = getChildFragmentManager();
+//                fm.beginTransaction()
+//                        .setCustomAnimations(R.animator.card_flip_left_in, R.animator.card_flip_left_out)
+//                        .replace(R.id.search_fragment_container, mPropertyListFragment)
+//                       // .addToBackStack(null)
+//                        .commit();
+//                mCurrentFragment = mPropertyListFragment;
+//            }else{
+//                mListItem.setTitle("List");
+//                FragmentManager fm = getChildFragmentManager();
+//                fm.beginTransaction()
+//                        .setCustomAnimations(R.animator.card_flip_left_in, R.animator.card_flip_left_out)
+//                        .replace(R.id.search_fragment_container, mMapSearchFragment)
+//                        .commit();
+//               // fm.popBackStack();
+//                mCurrentFragment = mMapSearchFragment;
+//            }
+            if (mListContainer.getVisibility() == View.GONE ){
+                mListContainer.setVisibility(View.VISIBLE);
+            }else
+            {
+                mListContainer.setVisibility(View.GONE);
             }
             return true;
         }else if (item.getItemId() == R.id.menu_item_current_location){
