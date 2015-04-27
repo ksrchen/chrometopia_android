@@ -72,10 +72,19 @@ public class MainActivity extends ActionBarActivity
                 mTitle = getString(R.string.title_search);
                 break;
             case 2:
-                mTitle = getString(R.string.title_hottest_properties);
+                mTitle = getString(R.string.title_my_account);
                 break;
             case 3:
+                mTitle = getString(R.string.title_hottest_properties);
+                break;
+            case 4:
                 mTitle = getString(R.string.title_my_properties);
+                break;
+            case 5:
+                mTitle = getString(R.string.title_leave_comment);
+                break;
+            case 6:
+                mTitle = getString(R.string.title_rate_this_app);
                 break;
         }
     }
