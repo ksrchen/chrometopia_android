@@ -57,12 +57,13 @@ import java.util.List;
  * Use the {@link fragment_map_search#newInstance} factory method to
  * create an instance of this fragment.
  */
-public class fragment_map_search extends Fragment {
+public class fragment_map_search extends Fragment implements SearchFilterFragment.OnFragmentInteractionListener {
     //ODO: Rename parameter arguments, choose names that match
     // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
 
     private static final String ARG_SECTION_NUMBER = "section_number";
     private GoogleMap mMap;
+    private String mFilters ="";
 
     // TODO: Rename and change types of parameters
     private int mSectionNumber;
@@ -301,6 +302,18 @@ public class fragment_map_search extends Fragment {
         this.mPropertyListFragment = mPropertyListFragment;
     }
 
+    @Override
+    public void onApplyFilter(String filter) {
+        mFilters = filter;
+        new DataLoader().execute("");
+    }
+
+    @Override
+    public void OnResetFilter() {
+        mFilters = "";
+        new DataLoader().execute("");
+    }
+
 
     /**
      * This interface must be implemented by activities that contain this
@@ -341,7 +354,7 @@ public class fragment_map_search extends Fragment {
 
     private class DataLoader extends AsyncTask<String, Integer, String>{
         private String mWellknownPolygon;
-        private String mFilters ="";
+
 
         @Override
         protected void onPreExecute() {

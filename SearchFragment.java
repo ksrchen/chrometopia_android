@@ -78,6 +78,9 @@ public class SearchFragment extends Fragment {
         mFilterFragment = SearchFilterFragment.newInstance();
         mMapSearchFragment = fragment_map_search.newInstance(1);
         mMapSearchFragment.setmPropertyListFragment(mPropertyListFragment);
+
+        mFilterFragment.setListener(mMapSearchFragment);
+
         FragmentManager fm = getChildFragmentManager();
         fm.beginTransaction()
                 .add(R.id.search_fragment_container, mMapSearchFragment)
