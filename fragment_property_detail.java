@@ -1,15 +1,19 @@
 package com.kchen.chrometopia;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
+import android.support.v4.view.MenuItemCompat;
+import android.support.v7.widget.ShareActionProvider;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
@@ -140,6 +144,16 @@ public class fragment_property_detail extends Fragment {
     @Override
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
         inflater.inflate(R.menu.propertydetail, menu);
+
+        Intent sendIntent = new Intent();
+        sendIntent.setAction(Intent.ACTION_SEND);
+        sendIntent.putExtra(Intent.EXTRA_TEXT, "This is my text to send.");
+        sendIntent.setType("text/plain");
+
+        MenuItem item =  menu.findItem(R.id.menu_item_share);
+        ShareActionProvider provider  = (ShareActionProvider) MenuItemCompat.getActionProvider(item);
+        provider.setShareIntent(sendIntent);
+
         super.onCreateOptionsMenu(menu, inflater);
     }
 
