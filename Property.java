@@ -9,6 +9,9 @@ public class Property {
     private double ROI;
     private double Price;
 
+    private String ListingKey;
+    private String MediaUrl;
+
     public String getMLSNumber() {
         return MLSNumber;
     }
@@ -39,5 +42,21 @@ public class Property {
 
     public void setPrice(double price) {
         Price = price;
+    }
+
+    public String getListingKey() {
+        return ListingKey;
+    }
+
+    public void setListingKey(String listingKey) {
+        ListingKey = listingKey;
+    }
+
+    public String getMediaUrl() {
+        return MediaUrl;
+    }
+
+    public void setMediaUrl(String mediaUrl) {
+        MediaUrl = mediaUrl;
     }
 }

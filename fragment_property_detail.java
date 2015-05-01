@@ -2,6 +2,8 @@ package com.kchen.chrometopia;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.AsyncTask;
@@ -16,6 +18,7 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.github.mikephil.charting.animation.AnimationEasing;
@@ -30,10 +33,12 @@ import com.github.mikephil.charting.data.LineDataSet;
 import com.github.mikephil.charting.data.PieData;
 import com.github.mikephil.charting.data.PieDataSet;
 
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.w3c.dom.Text;
 
 import java.io.BufferedReader;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.lang.reflect.Array;
@@ -56,6 +61,8 @@ public class fragment_property_detail extends Fragment {
 
     private TextView mAddressTextView;
     private TextView mPropertyDescription;
+
+    private ImageView mImageView;
 
     private PieChart mPiechart;
     private LineChart mLineChart;
@@ -111,6 +118,7 @@ public class fragment_property_detail extends Fragment {
 
         mPiechart = (PieChart)view.findViewById(R.id.property_detail_pie_chart);
         mLineChart = (LineChart)view.findViewById(R.id.property_detail_line_chart);
+        mImageView = (ImageView)view.findViewById(R.id.property_detail_image);
 
         new DataLoader().execute("");
         return view;
@@ -228,6 +236,10 @@ public class fragment_property_detail extends Fragment {
                 mAddressTextView.setText(address);
                 mPropertyDescription.setText(item.getString("PropertyDescription"));
 
+                JSONArray images = (JSONArray) item.get("MediaURLs");
+                if (images.length()> 0){
+                    new DownloadImageTask(mImageView).execute(images.get(0).toString());
+                }
                 ArrayList<Entry> entries = new ArrayList<Entry>();
                 entries.add(new Entry(2300f, 0));
                 entries.add(new Entry(300f, 1));
@@ -296,6 +308,32 @@ public class fragment_property_detail extends Fragment {
             }
         }
 
+    }
+
+
+    private class DownloadImageTask extends AsyncTask<String, Void, Bitmap> {
+        ImageView bmImage;
+
+        public DownloadImageTask(ImageView bmImage) {
+            this.bmImage = bmImage;
+        }
+
+        protected Bitmap doInBackground(String... urls) {
+            String urldisplay = urls[0];
+            Bitmap mIcon11 = null;
+            try {
+                InputStream in = new java.net.URL(urldisplay).openStream();
+                mIcon11 = BitmapFactory.decodeStream(in);
+            } catch (Exception e) {
+                Log.e("Error", e.getMessage());
+                e.printStackTrace();
+            }
+            return mIcon11;
+        }
+
+        protected void onPostExecute(Bitmap result) {
+            bmImage.setImageBitmap(result);
+        }
     }
 
 }

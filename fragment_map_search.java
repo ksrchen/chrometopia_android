@@ -463,16 +463,21 @@ public class fragment_map_search extends Fragment implements SearchFilterFragmen
                     );
                     String mlsNumber = item.getString("MLnumber");
 
+                    String listingKey = item.getString("ListingKey");
+                    String mediaUrl = item.getString("MediaURL");
+
                     MarkerOptions maker = new MarkerOptions()
                             .position(new LatLng(lat, lon))
                             .title(address)
                             .icon(BitmapDescriptorFactory.fromResource(R.drawable.pin));
                     Marker m = mMap.addMarker(maker);
-                    mMarkers.put(m,mlsNumber );
+                    mMarkers.put(m, mlsNumber );
 
                     Property p = new Property();
                     p.setMLSNumber(mlsNumber);
                     p.setAddress(address);
+                    p.setListingKey(listingKey);
+                    p.setMediaUrl(mediaUrl);
                     store.addProperty(p);
                 }
                 mPropertyListFragment.updateUI();
