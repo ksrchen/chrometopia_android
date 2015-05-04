@@ -135,9 +135,12 @@ public class PropertyListFragment extends ListFragment {
 
             Property c = getItem(position);
 
-            ((TextView) convertView.findViewById(R.id.property_list_item_mls_number)).setText("ML No:" + c.getMLSNumber());
+            NumberFormat percentFormat = NumberFormat.getPercentInstance();
+            percentFormat.setMaximumFractionDigits(2);
+
+             ((TextView) convertView.findViewById(R.id.property_list_item_mls_number)).setText("ML No:" + c.getMLSNumber());
             ((TextView) convertView.findViewById(R.id.property_list_item_address)).setText(c.getAddress());
-            ((TextView) convertView.findViewById(R.id.property_list_item_roi)).setText("ROI: " + NumberFormat.getPercentInstance().format(c.getROI()));
+            ((TextView) convertView.findViewById(R.id.property_list_item_roi)).setText("ROI: " + (c.getROI() > 0 ? percentFormat.format(c.getROI()) : ""));
             ((TextView) convertView.findViewById(R.id.property_list_item_price)).setText("Price: " + NumberFormat.getCurrencyInstance().format(c.getPrice()));
 
             String url = c.getMediaUrl();

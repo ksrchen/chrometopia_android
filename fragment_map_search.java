@@ -465,6 +465,8 @@ public class fragment_map_search extends Fragment implements SearchFilterFragmen
 
                     String listingKey = item.getString("ListingKey");
                     String mediaUrl = item.getString("MediaURL");
+                    Double ROI = item.getDouble("ROI");
+                    double ListPrice = item.getDouble("ListPrice");
 
                     MarkerOptions maker = new MarkerOptions()
                             .position(new LatLng(lat, lon))
@@ -478,6 +480,8 @@ public class fragment_map_search extends Fragment implements SearchFilterFragmen
                     p.setAddress(address);
                     p.setListingKey(listingKey);
                     p.setMediaUrl(mediaUrl);
+                    p.setROI(ROI);
+                    p.setPrice(ListPrice);
                     store.addProperty(p);
                 }
                 mPropertyListFragment.updateUI();

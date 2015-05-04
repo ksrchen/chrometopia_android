@@ -44,6 +44,7 @@ import java.io.OutputStreamWriter;
 import java.lang.reflect.Array;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.text.NumberFormat;
 import java.util.ArrayList;
 
 /**
@@ -61,6 +62,17 @@ public class fragment_property_detail extends Fragment {
 
     private TextView mAddressTextView;
     private TextView mPropertyDescription;
+    private TextView mROI;
+    private TextView mPrice;
+    private TextView mListingAgent;
+    private TextView mListingOffice;
+
+    private float mMortage;
+    private float mPropertyTax;
+    private float mPropertyManagement;
+    private float mInsurance;
+
+    private double mGrossIncome;
 
     private ImageView mImageView;
 
@@ -115,6 +127,11 @@ public class fragment_property_detail extends Fragment {
 
         mAddressTextView = (TextView) view.findViewById(R.id.property_detail_address);
         mPropertyDescription = (TextView) view.findViewById(R.id.property_detail_property_description);
+
+        mROI = (TextView) view.findViewById(R.id.property_detail_roi);
+        mPrice = (TextView) view.findViewById(R.id.property_detail_price);
+        mListingAgent = (TextView) view.findViewById(R.id.property_detail_listing_agent);
+        mListingOffice = (TextView) view.findViewById(R.id.property_detail_listing_office);
 
         mPiechart = (PieChart)view.findViewById(R.id.property_detail_pie_chart);
         mLineChart = (LineChart)view.findViewById(R.id.property_detail_line_chart);
@@ -236,21 +253,45 @@ public class fragment_property_detail extends Fragment {
                 mAddressTextView.setText(address);
                 mPropertyDescription.setText(item.getString("PropertyDescription"));
 
+                NumberFormat percentFormat = NumberFormat.getPercentInstance();
+                percentFormat.setMaximumFractionDigits(2);
+                double roi = item.getDouble("ROI");
+                if (roi > 0){
+                    mROI.setText(percentFormat.format(roi));
+                }
+
+                NumberFormat currencyFormat = NumberFormat.getCurrencyInstance();
+                double price = item.getDouble("ListPrice");
+                mPrice.setText(currencyFormat.format(price));
+
+                String listAgent = item.getString("ListingAgentFirstName") + " "
+                        + item.getString("ListingAgentLastName");
+                mListingAgent.setText(listAgent);
+
+                mListingOffice.setText(item.getString("ListingOffice"));
+
+                mMortage = (float)item.getDouble("Mortage");
+                mPropertyTax = (float) item.getDouble("PropertyTax");
+                mPropertyManagement = (float)item.getDouble("PropertyManagement");
+                mInsurance = (float) item.getDouble("Insurance");
+
                 JSONArray images = (JSONArray) item.get("MediaURLs");
                 if (images.length()> 0){
                     new DownloadImageTask(mImageView).execute(images.get(0).toString());
                 }
                 ArrayList<Entry> entries = new ArrayList<Entry>();
-                entries.add(new Entry(2300f, 0));
-                entries.add(new Entry(300f, 1));
-                entries.add(new Entry(100f, 2));
+                entries.add(new Entry(mMortage, 0));
+                entries.add(new Entry(mInsurance, 1));
+                entries.add(new Entry(mPropertyTax, 2));
+                entries.add(new Entry(mPropertyManagement, 3));
+
                 PieDataSet dataSet = new PieDataSet(entries, "Expenses");
 
                 int colors[] = {Color.parseColor("#466A80"),Color.parseColor("#0078CA"),Color.parseColor("#5BC2E7"),Color.parseColor("#99E4FF")};
                 dataSet.setColors(colors);
 
 
-                PieData pieData = new PieData(new String[] {"Mortgage", "Insurance", "Property Mngt"},
+                PieData pieData = new PieData(new String[] {"Mortgage", "Insurance","Property Tax", "Property Mngt"},
                         dataSet);
 
                 mPiechart.setUsePercentValues(true);

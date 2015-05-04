@@ -11,6 +11,7 @@ public class Property {
 
     private String ListingKey;
     private String MediaUrl;
+    private double NumberOfUnites;
 
     public String getMLSNumber() {
         return MLSNumber;
@@ -58,5 +59,13 @@ public class Property {
 
     public void setMediaUrl(String mediaUrl) {
         MediaUrl = mediaUrl;
+    }
+
+    public double getNumberOfUnites() {
+        return NumberOfUnites;
+    }
+
+    public void setNumberOfUnites(double numberOfUnites) {
+        NumberOfUnites = numberOfUnites;
     }
 }
