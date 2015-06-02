@@ -1,6 +1,8 @@
 package com.kchen.chrometopia;
 
+import android.app.ActionBar;
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -10,8 +12,11 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.view.MenuItemCompat;
+import android.support.v4.view.PagerAdapter;
+import android.support.v4.view.ViewPager;
 import android.support.v7.widget.ShareActionProvider;
 import android.util.Log;
+import android.util.LruCache;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -32,6 +37,7 @@ import com.github.mikephil.charting.data.LineData;
 import com.github.mikephil.charting.data.LineDataSet;
 import com.github.mikephil.charting.data.PieData;
 import com.github.mikephil.charting.data.PieDataSet;
+import com.squareup.picasso.Picasso;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -66,6 +72,7 @@ public class fragment_property_detail extends Fragment {
     private TextView mPrice;
     private TextView mListingAgent;
     private TextView mListingOffice;
+    private TextView mImageCounter;
 
     private float mMortage;
     private float mPropertyTax;
@@ -74,11 +81,12 @@ public class fragment_property_detail extends Fragment {
 
     private double mGrossIncome;
 
-    private ImageView mImageView;
+    private ViewPager mImageViewPager;
 
     private PieChart mPiechart;
     private LineChart mLineChart;
 
+    private LruCache<String, Bitmap> mMemoryCache;
     // The request code must be 0 or greater.
     private static final int PLUS_ONE_REQUEST_CODE = 0;
     private OnFragmentInteractionListener mListener;
@@ -96,11 +104,18 @@ public class fragment_property_detail extends Fragment {
         Bundle args = new Bundle();
         args.putString(ARG_MLS_NUMBER, mLSNumber);
         fragment.setArguments(args);
+
         return fragment;
     }
 
     public fragment_property_detail() {
         // Required empty public constructor
+        final int maxMemory = (int) (Runtime.getRuntime().maxMemory() / 1024);
+
+        // Use 1/8th of the available memory for this memory cache.
+        final int cacheSize = maxMemory / 8;
+
+        mMemoryCache = new LruCache<String, Bitmap>(cacheSize);
     }
 
     @Override
@@ -135,7 +150,8 @@ public class fragment_property_detail extends Fragment {
 
         mPiechart = (PieChart)view.findViewById(R.id.property_detail_pie_chart);
         mLineChart = (LineChart)view.findViewById(R.id.property_detail_line_chart);
-        mImageView = (ImageView)view.findViewById(R.id.property_detail_image);
+        mImageViewPager = (ViewPager)view.findViewById(R.id.property_detail_image_pager);
+        mImageCounter = (TextView)view.findViewById(R.id.property_detail_image_counter);
 
         new DataLoader().execute("");
         return view;
@@ -277,7 +293,13 @@ public class fragment_property_detail extends Fragment {
 
                 JSONArray images = (JSONArray) item.get("MediaURLs");
                 if (images.length()> 0){
-                    new DownloadImageTask(mImageView).execute(images.get(0).toString());
+                    //new DownloadImageTask(mImageView).execute(images.get(0).toString());
+                    ArrayList<String> imageUrls = new ArrayList<>();
+                    for (int i=0; i<images.length(); i++){
+                        imageUrls.add(images.getString(i));
+                    }
+                    ImagePagerAdapter adapter = new ImagePagerAdapter(getActivity().getApplicationContext(), imageUrls);
+                    mImageViewPager.setAdapter(adapter);
                 }
                 ArrayList<Entry> entries = new ArrayList<Entry>();
                 entries.add(new Entry(mMortage, 0));
@@ -354,13 +376,13 @@ public class fragment_property_detail extends Fragment {
 
     private class DownloadImageTask extends AsyncTask<String, Void, Bitmap> {
         ImageView bmImage;
-
+        String urldisplay;
         public DownloadImageTask(ImageView bmImage) {
             this.bmImage = bmImage;
         }
 
         protected Bitmap doInBackground(String... urls) {
-            String urldisplay = urls[0];
+            urldisplay = urls[0];
             Bitmap mIcon11 = null;
             try {
                 InputStream in = new java.net.URL(urldisplay).openStream();
@@ -374,7 +396,64 @@ public class fragment_property_detail extends Fragment {
 
         protected void onPostExecute(Bitmap result) {
             bmImage.setImageBitmap(result);
+            mMemoryCache.put(urldisplay, result);
         }
     }
+
+    private class ImagePagerAdapter extends android.support.v4.view.PagerAdapter {
+        private Context mContext;
+        private ArrayList<String> mImageUrls;
+
+        public ImagePagerAdapter (Context context, ArrayList<String> imagesUrls){
+            mContext = context;
+            mImageUrls = imagesUrls;
+        }
+        @Override
+        public int getCount() {
+            return mImageUrls.size();
+        }
+
+        @Override
+        public boolean isViewFromObject(View view, Object object) {
+            return view == ((ImageView) object);
+        }
+
+        @Override
+        public Object instantiateItem(ViewGroup container, int position) {
+            ImageView imageView = new ImageView(mContext);
+            int padding = 2;
+            imageView.setPadding(padding, padding, padding, padding);
+            imageView.setScaleType(ImageView.ScaleType.FIT_CENTER);
+            ViewGroup.LayoutParams layout  = new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.MATCH_PARENT);
+           // imageView.setLayoutParams(layout);
+            String url = mImageUrls.get(position);
+            Picasso.with(mContext)
+                    .load(url)
+                  .placeholder(R.drawable.placeholder)
+//                    .error(R.drawable.user_placeholder_error)
+                    .into(imageView);
+//            Bitmap image = mMemoryCache.get(url);
+//            if (image != null){
+//                imageView.setImageBitmap(image);
+//            }else {
+//                new DownloadImageTask(imageView).execute(url);
+//            }
+
+            ((ViewPager) container).addView(imageView, 0);
+            return imageView;
+        }
+
+        @Override
+        public void destroyItem(ViewGroup container, int position, Object object) {
+            ((ViewPager) container).removeView((ImageView) object);
+        }
+
+        @Override
+        public void setPrimaryItem(ViewGroup container, int position, Object object) {
+            super.setPrimaryItem(container, position, object);
+            mImageCounter.setText(String.format("%d/%d", position+1, getCount()));
+        }
+    };
 
 }

@@ -18,6 +18,7 @@ import android.widget.TextView;
 
 
 import com.kchen.chrometopia.dummy.DummyContent;
+import com.squareup.picasso.Picasso;
 
 import java.io.InputStream;
 import java.text.NumberFormat;
@@ -146,7 +147,12 @@ public class PropertyListFragment extends ListFragment {
             String url = c.getMediaUrl();
             if (url.length()> 0) {
                 ImageView imageView = (ImageView) convertView.findViewById(R.id.property_list_item_image);
-                new DownloadImageTask(imageView).execute(c.getMediaUrl());
+               // new DownloadImageTask(imageView).execute(c.getMediaUrl());
+                Picasso.with(getActivity())
+                        .load(c.getMediaUrl())
+                        .placeholder(R.drawable.placeholder)
+//                    .error(R.drawable.user_placeholder_error)
+                        .into(imageView);
             }
             return convertView;
         }
